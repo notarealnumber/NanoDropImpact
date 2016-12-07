@@ -28,6 +28,13 @@ def cart2pol(x, y):
     return rho, phi
 
 
+def pol2cart(rho, phi):
+
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return x, y
+
+
 def get_user_input():
     """ Function that asks the user for filename, how many frames
     the trajectory contains, and the number of atoms a molecule has.
@@ -41,12 +48,12 @@ def get_user_input():
     # print(" ")
     # print("####################################")
     # filename = input("Enter file name: ")
-    filename = "drop10nm.vel"
+    filename = "drop10nm-17ps19ps.vel"
     #
     # print("####################################")
     # nsteps = input("Number of frames: ")
     # nsteps = int(nsteps)
-    nsteps = 25
+    nsteps = 40
     #
     # print("####################################")
     # at_per_molec = input("Number of atoms per molecule: ")
@@ -62,7 +69,10 @@ def get_user_input():
     # print(" ")
     calc_vel = True
 
-    return filename, nsteps, at_per_molec, dt, calc_vel
+    max_vel = 1200
+    drop_diameter = 100.0
+
+    return filename, nsteps, at_per_molec, dt, calc_vel, max_vel, drop_diameter
 
 
 def get_info(inputfile,
