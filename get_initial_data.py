@@ -43,28 +43,28 @@ def get_user_input():
     at_per_molec
     """
 
-    print(" ")
-    print("####################################")
-    filename = input("Enter file name: ")
-    # filename = "drop10nm-17ps19ps.vel"
-
-    print("####################################")
-    nsteps = input("Number of frames: ")
-    nsteps = int(nsteps)
-    # nsteps = 40
-
-    print("####################################")
-    at_per_molec = input("Number of atoms per molecule: ")
-    at_per_molec = int(at_per_molec)
-    # at_per_molec = 44
-
-    print("####################################")
-    print("Time between 2 consecutive")
-    dt = input("time steps (in [fs]): ")
-    dt = float(dt)
-    # dt = 50
-    print("####################################")
-    print(" ")
+    # print(" ")
+    # print("####################################")
+    # filename = input("Enter file name: ")
+    filename = "drop10nm-17ps19ps.vel"
+    #
+    # print("####################################")
+    # nsteps = input("Number of frames: ")
+    # nsteps = int(nsteps)
+    nsteps = 40
+    #
+    # print("####################################")
+    # at_per_molec = input("Number of atoms per molecule: ")
+    # at_per_molec = int(at_per_molec)
+    at_per_molec = 44
+    #
+    # print("####################################")
+    # print("Time between 2 consecutive")
+    # dt = input("time steps (in [fs]): ")
+    # dt = float(dt)
+    dt = 50
+    # print("####################################")
+    # print(" ")
     calc_vel = True
 
     max_vel = 1600

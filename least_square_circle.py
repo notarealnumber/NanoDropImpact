@@ -383,6 +383,3 @@ def plot_data_circle(x, y, xc, yc, R):
     plt.grid()
     plt.title('Least Squares Circle')
     plt.show()
-
-
-# def plot_ellipsis(axes, center, phi):

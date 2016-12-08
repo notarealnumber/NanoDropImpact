@@ -58,9 +58,6 @@ def spread_radius(rho_z_distribution,
             rho_z.append(iz * dz)
             rho_density.append(density)
 
-    # https://www.math.ucdavis.edu/~kouba/CalcOneDIRECTORY/implicitdiffdirectory/ImplicitDiff.html
-    # www.derivative-calculator.net/
-
     rho_rho = np.array(rho_rho)
     rho_z = np.array(rho_z)
     rho_density = np.array(rho_density)
@@ -86,13 +83,6 @@ def spread_radius(rho_z_distribution,
         fontproperties='Open Sans'
     )
 
-    # plt.clabel(
-    #     cntrf,
-    #     fontsize=11,
-    #     # font='Open Sans',
-    #     fmt='%3.0f'
-    # )
-
     cntr = plt.contourf(
         xi,
         yi,
@@ -110,7 +100,6 @@ def spread_radius(rho_z_distribution,
         data = cntrf.collections[3].get_paths()[i].vertices
 
         if len(data) > len(data0):
-            ivert = i - 1
             data0 = data
 
     v = data0  #cntr.collections[3].get_paths()[ivert].vertices
@@ -140,94 +129,28 @@ def spread_radius(rho_z_distribution,
     x_spread_radius_fit = a_points[:, 0]
     y_spread_radius_fit = a_points[:, 1]
 
-    x_spread, y_spread, R_spread = lsc_out_spreading.beta
-    Ri = calc_radius(x_spread_radius_fit, y_spread_radius_fit, x_spread, y_spread)
-    r_spread_def = np.mean(Ri)
+    x0, y0, r_contact = lsc_out_spreading.beta
+    Ri = calc_radius(x_spread_radius_fit, y_spread_radius_fit, x0, y0)
+    r_contact_def = np.mean(Ri)
 
-    spreading_radius = plt.Circle(
-        (x_spread, y_spread), r_spread_def,
-        alpha=0.4,
-        facecolor='none',
-        edgecolor='black',
-        linewidth=2.0
-        )
-    # lsc_model_ellipse = odr.Model(f_ellipse,
-    #                               implicit=True,
-    #                               estimate=calc_estimate_ellipse,
-    #                               fjacd=jacd_ellipse,
-    #                               fjacb=jacb_ellipse
-    #                               )
-    # lsc_model_ellipse = odr.Model(fit_ellipse2,
-    #                               implicit=True,
-    #                               fjacd=jacd_ellipse2,
-    #                               fjacb=jacb_ellipse2
-    #                               )
+    x_intersect = np.sqrt(r_contact_def**2 - (0.0 - y0)**2) + x0
+    slope1 = -y0 / (x_intersect - x0)
+    contact_angle = 180.0 - (90.0 - np.abs(np.rad2deg(slope1)))
 
-    print("Start fit")
-    # lsc_odr_ellipse = odr.ODR(lsc_data_ellipse,
-    #                           lsc_model_ellipse,
-    #                           beta0=[100.0, 100.0, 102.0, 120.0, 140.0, 50.0])
-    # lsc_odr_ellipse.set_job(deriv=2)
-    # lsc_odr_ellipse.set_iprint(iter=1, iter_step=1)
-    # lsc_out_ellipse = lsc_odr_ellipse.run()
-    # a, b, c, d, f, g = lsc_out_ellipse.beta
-    # # h, k, a, b = lsc_out_ellipse.beta
-    # num = b*b-a*c
-    # x0=(c*d-b*f)/num
-    # y0=(a*f-b*d)/num
-    # center = [x0, y0]
-    # angle = 0.5*np.arctan(2*b/(a-c))
-    # up = 2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g)
-    # down1=(b*b-a*c)*( (c-a)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
-    # down2=(b*b-a*c)*( (a-c)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
-    # res1=np.sqrt(up/down1)
-    # res2=np.sqrt(up/down2)
-    # axes = [res1, res2]
-    # print(center, axes, angle)
-
-    print("Finished fit:", x_spread, y_spread, r_spread_def)
-
-    # the_ellipse = Ellipse(xy=[h, k], width=2*a, height=2*b, angle=0.0,
-    #     facecolor='none',
-    #     edgecolor='red',
-    #     linewidth=2.0)
-    #
-    # intersect_x = center[0] + major_axis * np.cos(angle_rad)
-    # print(x1, x2, intersect_x)
-    # if x1 > x2:
-    #     x = x2
-    # else:
-    #     x = x1
-    #
-    # slope = (2.0 * A * (center[0] - 69.8) + center[1] * B) / \
-    #         (B * (1 - center[0]) - 2.0 * C * center[1])
-    # slope = -(2.0 * (x - center[0]) * (np.cos(angle_rad)**2 / size[0]**2 + np.sin(angle_rad)**2 / size[1]**2) -
-    #          np.sin(2.0 * angle_rad) * (0.0 - center[1]) * (1 / size[0]**2) - 1 / size[1]**2) / \
-    #         (2.0 * (0.0 - center[1]) * (np.sin(angle_rad)**2 / size[0]**2 + np.cos(angle_rad)**2 / size[1]**2) -
-    #          np.sin(2.0 * angle_rad) * (x - center[0]) * (1 / size[0]**2) - 1 / size[1]**2)
-
-    # print(slope, np.rad2deg(np.arctan(slope)))
+    all_data.append(x_intersect)
+    all_data.append(contact_angle)
 
     cbar = plt.colorbar(
         cntr,
         label=r'Density $\rho$ [kg/m$^{\text{3}}$]'
     )
 
-    # lsc_dataX = odr.Data(np.row_stack([xcs, ycs]), y=1)
-    # lsc_modelX = odr.Model(f_3, implicit=True, estimate=calc_estimate, fjacd=jacd, fjacb=jacb)
-    # lsc_odrX = odr.ODR(lsc_dataX, lsc_modelX)
-    # lsc_odrX.set_job(deriv=3)
-    # lsc_outX = lsc_odrX.run()
-    #
-    # xx_3, yx_3, Rx_3 = lsc_outX.beta
-    # Ri_3 = calc_radius(xcs, ycs, xx_3, yx_3)
-    # Rx_def = np.mean(Ri_3)
-    # residue = sum((Ri_3 - R_3)**2)
-
-
-    # all_data.append(xx_3)
-    # all_data.append(yx_3)
-    # all_data.append(Rx_3)
+    plt.clabel(
+        cntrf,
+        fontsize=11,
+        font='Open Sans',
+        fmt='%3.0f'
+    )
 
     fig = plt.gcf()
     ax = fig.gca()
@@ -239,21 +162,6 @@ def spread_radius(rho_z_distribution,
         r"z, \AA"
     )
 
-    # ax.set_xticklabels(
-    #     ax.get_xticks(),
-    #     fontproperties='Open Sans'
-    # )
-    #
-    # ax.set_yticklabels(
-    #     ax.get_yticks(),
-    #     fontproperties='Open Sans'
-    # )
-
-    # cbar.ax.set_yticklabels(
-    #     levels,
-    #     fontproperties='Open Sans'
-    # )
-
     plt.text(
         50, 50,
         str((first_timestep + iframe * dt) / 1000) + " ps",
@@ -261,16 +169,10 @@ def spread_radius(rho_z_distribution,
         fontproperties='Open Sans'
     )
 
-    # x_vals = np.linspace(0, x + 40, 80)
-    # tangent = (90 + slope) * x_vals
-    # plt.plot(x_vals + 69.8, tangent, alpha=0.4, color='yellow', linewidth=2.0)
-
     plt.plot(a_points[:, 0], a_points[:, 1], lw=2, color='w')
 
-    # plt.ylim(-15, 25)
     plt.ylim(0, diameter)
     plt.xlim(0, diameter)
-    # plt.xlim(45, 75)
 
     plt.savefig(
         './drop_profile/Density-only-' +
@@ -278,39 +180,22 @@ def spread_radius(rho_z_distribution,
         'fs.png'
     )
 
+    spreading_radius = plt.Circle(
+        (x0, y0), r_contact_def,
+        alpha=0.8,
+        facecolor='none',
+        edgecolor='orange',
+        linewidth=2.0
+        )
+
     ax.add_artist(spreading_radius)
-    # plt.show()
+
+    xpnts = np.linspace(x_intersect - 20.0, x_intersect + 20.0, 100)
+    ypnts = np.deg2rad(contact_angle) * (xpnts - x_intersect)
+    plt.plot(xpnts, ypnts, color='black', lw=2.0)
 
     # Formula for the ellipse
     # https://math.stackexchange.com/questions/426150/what-is-the-general-equation-of-the-ellipse-that-is-not-in-the-origin-and-rotate#434482
-
-    # spread_radius_side = plt.Circle(
-    #     (xx_3, yx_3), Rx_def,
-    #     alpha=0.4,
-    #     facecolor='none',
-    #     edgecolor='black',
-    #     linewidth=2.0
-    # )
-    #
-    # ax.add_artist(
-    #     spread_radius_side
-    # )
-    #
-    # if yx_3 == 0.0:
-    #     spread_rad_surf = Rx_def
-    #     deriv = 0.0
-    # elif yx_3 > 0.0:
-    #     spread_rad_surf = np.sqrt(Rx_def**2 - yx_3**2) + xx_3
-    #     deriv = (spread_rad_surf - xx_3) / np.sqrt(Rx_def**2 - (spread_rad_surf - xx_3)**2)
-    # elif yx_3 < 0.0:
-    #     spread_rad_surf = np.sqrt(Rx_def**2 - yx_3**2) + xx_3
-    #     deriv = (-1) * (spread_rad_surf - xx_3) / np.sqrt(Rx_def**2 - (spread_rad_surf - xx_3)**2)
-    #
-    # contact_angle = np.absolute(np.rad2deg(np.arctan(deriv)))
-    #
-    # x = np.linspace(Rx_def - 40.0, Rx_def, 25)
-    # slope = deriv * x - spread_rad_surf * deriv
-    # plt.plot(x, slope, alpha=0.4, color='yellow', linewidth=2.0)
 
     plt.savefig(
         './drop_profile/Density-with-CircleSlope' +
@@ -319,14 +204,8 @@ def spread_radius(rho_z_distribution,
     )
 
     plt.close(fig)
-    # plt.close(profile_fig)
-
-    # print(spread_rad_surf, deriv, contact_angle, np.absolute(contact_angle))
-    # all_data.append(spread_rad_surf)
-    # all_data.append(contact_angle)
 
     # And the same for the disks using get_spread_radius_map
-
     for iz in range(0, z_height * 3, z_height):
         """
         z_height defines how many layers of thickness dz will be merged.
@@ -378,11 +257,6 @@ def spread_radius(rho_z_distribution,
                 if zi[j, k] < 0.0:
                     zi[j, k] = 0.0
 
-        # levels = ()
-        # lvl_rnge = int(np.ceil(spread_radius_density.max() / 100) * 100) + 100
-        # for lvl in range(0, lvl_rnge, 100):
-        #     levels = levels + (lvl,)
-
         # spread_radius_fig = plt.figure(iz)
 
         spread_radius_cntr_line = plt.contour(
@@ -394,8 +268,14 @@ def spread_radius(rho_z_distribution,
 
         # Get the data points needed to fit the circle.
         # 200 kg/m**3 should be used as limit.
-        pts_for_fit = spread_radius_cntr_line.collections[2].get_paths()[0]
-        vertices_for_fit = pts_for_fit.vertices
+
+        data0 = []
+        for i in range(len(cntrf.collections[3].get_paths())):
+            data = cntrf.collections[3].get_paths()[i].vertices
+            if len(data) > len(data0):
+                data0 = data
+
+        vertices_for_fit = data0
         x_spread_radius_fit = vertices_for_fit[:, 0]
         y_spread_radius_fit = vertices_for_fit[:, 1]
 
