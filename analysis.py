@@ -121,7 +121,7 @@ def spread_radius(rho_z_distribution,
 
     ellipse = []
     # for i in range(len(xcs)):
-    for i in range(int(0.25 * len(xcs))):
+    for i in range(int(0.4 * len(xcs))):
         if ycs[i] > 0.50:
             ellipse.append((xcs[i], ycs[i]))
 
