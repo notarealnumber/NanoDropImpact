@@ -41,9 +41,9 @@ def main():
 
     generate_folder_structure()
 
-    dx = 12.5
-    dy = 12.5
-    dz = 8.0
+    dx = 12.0
+    dy = 12.0
+    dz = 12.0
     drho = 8.0
 
     # Initiate a few variables
@@ -51,7 +51,8 @@ def main():
     molar_mass = 0.0
     molecule_weight = 0.0
 
-    datafile, nframes, natoms, dt, calc_vel = get_user_input()
+    datafile, nframes, natoms, dt, \
+        calc_vel, max_vel, drop_diameter = get_user_input()
 
     nmol, tot_nr_of_atoms, \
         first_timestep, \
@@ -72,9 +73,13 @@ def main():
 
     all_data = []
 
-    levels = ()
+    density_levels = ()
     for lvl in range(0, 1200, 100):
-        levels += (lvl,)
+        density_levels += (lvl,)
+
+    velocity_levels = ()
+    for lvl in range(0, max_vel, 100):
+        velocity_levels += (lvl,)
 
     velocity_coord_file = open(datafile, "r")
 
@@ -126,11 +131,12 @@ def main():
         all_data.append(
             spread_radius(rho_z_molecules_distribution,
                           xyz_molecules_distribution,
-                          levels,
+                          density_levels,
                           molecule_weight,
                           timestep, first_timestep, dt,
                           xmin, xmax,
                           ymin, ymax,
+                          drop_diameter,
                           dx, dy, dz, drho
                           )
         )
@@ -142,6 +148,7 @@ def main():
                                   z_velocity_distribution,
                                   velocity_abs_value_rhoz,
                                   velocity_abs_value_xyz,
+                                  velocity_levels,
                                   timestep, first_timestep, dt,
                                   dx, dy, dz, drho
                                   )

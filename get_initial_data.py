@@ -22,14 +22,12 @@ def get_dummy_lines(inputfile):
 
 
 def cart2pol(x, y):
-
     rho = np.sqrt(x ** 2 + y ** 2)
     phi = np.arctan2(y, x)
     return rho, phi
 
 
 def pol2cart(rho, phi):
-
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
     return x, y
@@ -45,31 +43,31 @@ def get_user_input():
     at_per_molec
     """
 
-    # print(" ")
-    # print("####################################")
-    # filename = input("Enter file name: ")
-    filename = "drop10nm-17ps19ps.vel"
-    #
-    # print("####################################")
-    # nsteps = input("Number of frames: ")
-    # nsteps = int(nsteps)
-    nsteps = 40
-    #
-    # print("####################################")
-    # at_per_molec = input("Number of atoms per molecule: ")
-    # at_per_molec = int(at_per_molec)
-    at_per_molec = 44
-    #
-    # print("####################################")
-    # print("Time between 2 consecutive")
-    # dt = input("time steps (in [fs]): ")
-    # dt = float(dt)
-    dt = 50
-    # print("####################################")
-    # print(" ")
+    print(" ")
+    print("####################################")
+    filename = input("Enter file name: ")
+    # filename = "drop10nm-17ps19ps.vel"
+
+    print("####################################")
+    nsteps = input("Number of frames: ")
+    nsteps = int(nsteps)
+    # nsteps = 40
+
+    print("####################################")
+    at_per_molec = input("Number of atoms per molecule: ")
+    at_per_molec = int(at_per_molec)
+    # at_per_molec = 44
+
+    print("####################################")
+    print("Time between 2 consecutive")
+    dt = input("time steps (in [fs]): ")
+    dt = float(dt)
+    # dt = 50
+    print("####################################")
+    print(" ")
     calc_vel = True
 
-    max_vel = 1200
+    max_vel = 1600
     drop_diameter = 100.0
 
     return filename, nsteps, at_per_molec, dt, calc_vel, max_vel, drop_diameter

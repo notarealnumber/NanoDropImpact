@@ -2,6 +2,10 @@ import scipy.interpolate
 from least_square_circle import *
 import numpy as np
 from scipy import odr
+from get_initial_data import cart2pol, pol2cart
+import cv2
+import time
+from matplotlib.patches import Ellipse
 
 
 def spread_radius(rho_z_distribution,
@@ -11,6 +15,7 @@ def spread_radius(rho_z_distribution,
                   iframe, first_timestep, dt,
                   xmin, xmax,
                   ymin, ymax,
+                  diameter,
                   dx, dy, dz, drho
                   ):
 
@@ -36,8 +41,9 @@ def spread_radius(rho_z_distribution,
 
     z_height = 2
 
-    size_rho = int(np.ceil(100 / drho))
-    size_z = int(np.ceil(80 / dz))
+    size_rho = int(np.ceil(diameter / drho))
+    size_z = size_rho
+    # size_z = int(np.ceil(80 / dz))
     rho_rho = []
     rho_z = []
     rho_density = []
@@ -70,7 +76,8 @@ def spread_radius(rho_z_distribution,
             if zi[j, k] < 0.0:
                 zi[j, k] = 0.0
 
-    # profile_fig = plt.figure(1)
+    fig = plt.figure()
+    ax = fig.gca()
 
     cntrf = plt.contour(
         xi, yi, zi,
@@ -79,51 +86,148 @@ def spread_radius(rho_z_distribution,
         fontproperties='Open Sans'
     )
 
-    # print(cntrf.collections[2].get_paths()[1])
-    v1 = cntrf.collections[2].get_paths()[0].vertices
-    # v2 = cntrf.collections[2].get_paths()[1].vertices
-    v = v1 #np.vstack([v1, v2])
-    xcs = v[:, 0]
-    ycs = v[:, 1]
-
-    plt.clabel(
-        cntrf,
-        fontsize=11,
-        font='Open Sans',
-        fmt='%3.0f'
-    )
+    # plt.clabel(
+    #     cntrf,
+    #     fontsize=11,
+    #     # font='Open Sans',
+    #     fmt='%3.0f'
+    # )
 
     cntr = plt.contourf(
         xi,
         yi,
         zi,
-        levels,
-        vmin=rho_density.min(), vmax=rho_density.max(),
+        levels[0:-1],
+        vmin=levels[0], vmax=levels[-1],
         origin='lower',
         extent=[
             rho_rho.min(), rho_rho.max(),
-            rho_z.min(), rho_z.max()],
+            rho_z.min(), rho_z.max()]
     )
+
+    data0 = []
+    for i in range(len(cntrf.collections[3].get_paths())):
+        data = cntrf.collections[3].get_paths()[i].vertices
+
+        if len(data) > len(data0):
+            ivert = i - 1
+            data0 = data
+
+    v = data0  #cntr.collections[3].get_paths()[ivert].vertices
+    # v2 = cntr.collections[3].get_paths()[1].vertices
+    # v = np.vstack([v1, v2])
+    xcs = v[:, 0]
+    ycs = v[:, 1]
+
+    ellipse = []
+    # for i in range(len(xcs)):
+    for i in range(int(0.25 * len(xcs))):
+        if ycs[i] > 0.50:
+            ellipse.append((xcs[i], ycs[i]))
+
+    a_points = np.array(ellipse)
+    lsc_data_ellipse = odr.Data(np.row_stack([a_points[:, 0], a_points[:, 1]]), y=1)
+    lsc_model_spreading = odr.Model(f_3,
+                                    implicit=True,
+                                    estimate=calc_estimate,
+                                    fjacd=jacd,
+                                    fjacb=jacb)
+
+    lsc_odr_spreading = odr.ODR(lsc_data_ellipse, lsc_model_spreading)
+    lsc_odr_spreading.set_job(deriv=3)
+    # lsc_odr_spreading.set_iprint(iter=1, iter_step=1)
+    lsc_out_spreading = lsc_odr_spreading.run()
+    x_spread_radius_fit = a_points[:, 0]
+    y_spread_radius_fit = a_points[:, 1]
+
+    x_spread, y_spread, R_spread = lsc_out_spreading.beta
+    Ri = calc_radius(x_spread_radius_fit, y_spread_radius_fit, x_spread, y_spread)
+    r_spread_def = np.mean(Ri)
+
+    spreading_radius = plt.Circle(
+        (x_spread, y_spread), r_spread_def,
+        alpha=0.4,
+        facecolor='none',
+        edgecolor='black',
+        linewidth=2.0
+        )
+    # lsc_model_ellipse = odr.Model(f_ellipse,
+    #                               implicit=True,
+    #                               estimate=calc_estimate_ellipse,
+    #                               fjacd=jacd_ellipse,
+    #                               fjacb=jacb_ellipse
+    #                               )
+    # lsc_model_ellipse = odr.Model(fit_ellipse2,
+    #                               implicit=True,
+    #                               fjacd=jacd_ellipse2,
+    #                               fjacb=jacb_ellipse2
+    #                               )
+
+    print("Start fit")
+    # lsc_odr_ellipse = odr.ODR(lsc_data_ellipse,
+    #                           lsc_model_ellipse,
+    #                           beta0=[100.0, 100.0, 102.0, 120.0, 140.0, 50.0])
+    # lsc_odr_ellipse.set_job(deriv=2)
+    # lsc_odr_ellipse.set_iprint(iter=1, iter_step=1)
+    # lsc_out_ellipse = lsc_odr_ellipse.run()
+    # a, b, c, d, f, g = lsc_out_ellipse.beta
+    # # h, k, a, b = lsc_out_ellipse.beta
+    # num = b*b-a*c
+    # x0=(c*d-b*f)/num
+    # y0=(a*f-b*d)/num
+    # center = [x0, y0]
+    # angle = 0.5*np.arctan(2*b/(a-c))
+    # up = 2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g)
+    # down1=(b*b-a*c)*( (c-a)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
+    # down2=(b*b-a*c)*( (a-c)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
+    # res1=np.sqrt(up/down1)
+    # res2=np.sqrt(up/down2)
+    # axes = [res1, res2]
+    # print(center, axes, angle)
+
+    print("Finished fit:", x_spread, y_spread, r_spread_def)
+
+    # the_ellipse = Ellipse(xy=[h, k], width=2*a, height=2*b, angle=0.0,
+    #     facecolor='none',
+    #     edgecolor='red',
+    #     linewidth=2.0)
+    #
+    # intersect_x = center[0] + major_axis * np.cos(angle_rad)
+    # print(x1, x2, intersect_x)
+    # if x1 > x2:
+    #     x = x2
+    # else:
+    #     x = x1
+    #
+    # slope = (2.0 * A * (center[0] - 69.8) + center[1] * B) / \
+    #         (B * (1 - center[0]) - 2.0 * C * center[1])
+    # slope = -(2.0 * (x - center[0]) * (np.cos(angle_rad)**2 / size[0]**2 + np.sin(angle_rad)**2 / size[1]**2) -
+    #          np.sin(2.0 * angle_rad) * (0.0 - center[1]) * (1 / size[0]**2) - 1 / size[1]**2) / \
+    #         (2.0 * (0.0 - center[1]) * (np.sin(angle_rad)**2 / size[0]**2 + np.cos(angle_rad)**2 / size[1]**2) -
+    #          np.sin(2.0 * angle_rad) * (x - center[0]) * (1 / size[0]**2) - 1 / size[1]**2)
+
+    # print(slope, np.rad2deg(np.arctan(slope)))
 
     cbar = plt.colorbar(
         cntr,
         label=r'Density $\rho$ [kg/m$^{\text{3}}$]'
     )
 
-    lsc_dataX = odr.Data(np.row_stack([xcs, ycs]), y=1)
-    lsc_modelX = odr.Model(f_3, implicit=True, estimate=calc_estimate, fjacd=jacd, fjacb=jacb)
-    lsc_odrX = odr.ODR(lsc_dataX, lsc_modelX)
-    lsc_odrX.set_job(deriv=3)
-    lsc_outX = lsc_odrX.run()
-
-    xx_3, yx_3, Rx_3 = lsc_outX.beta
-    Ri_3 = calc_R(xcs, ycs, xx_3, yx_3)
-    Rx_def = np.mean(Ri_3)
+    # lsc_dataX = odr.Data(np.row_stack([xcs, ycs]), y=1)
+    # lsc_modelX = odr.Model(f_3, implicit=True, estimate=calc_estimate, fjacd=jacd, fjacb=jacb)
+    # lsc_odrX = odr.ODR(lsc_dataX, lsc_modelX)
+    # lsc_odrX.set_job(deriv=3)
+    # lsc_outX = lsc_odrX.run()
+    #
+    # xx_3, yx_3, Rx_3 = lsc_outX.beta
+    # Ri_3 = calc_radius(xcs, ycs, xx_3, yx_3)
+    # Rx_def = np.mean(Ri_3)
     # residue = sum((Ri_3 - R_3)**2)
 
-    all_data.append(xx_3)
-    all_data.append(yx_3)
-    all_data.append(Rx_3)
+
+    # all_data.append(xx_3)
+    # all_data.append(yx_3)
+    # all_data.append(Rx_3)
 
     fig = plt.gcf()
     ax = fig.gca()
@@ -135,20 +239,20 @@ def spread_radius(rho_z_distribution,
         r"z, \AA"
     )
 
-    ax.set_xticklabels(
-        ax.get_xticks(),
-        fontproperties='Open Sans'
-    )
+    # ax.set_xticklabels(
+    #     ax.get_xticks(),
+    #     fontproperties='Open Sans'
+    # )
+    #
+    # ax.set_yticklabels(
+    #     ax.get_yticks(),
+    #     fontproperties='Open Sans'
+    # )
 
-    ax.set_yticklabels(
-        ax.get_yticks(),
-        fontproperties='Open Sans'
-    )
-
-    cbar.ax.set_yticklabels(
-        levels,
-        fontproperties='Open Sans'
-    )
+    # cbar.ax.set_yticklabels(
+    #     levels,
+    #     fontproperties='Open Sans'
+    # )
 
     plt.text(
         50, 50,
@@ -157,42 +261,56 @@ def spread_radius(rho_z_distribution,
         fontproperties='Open Sans'
     )
 
+    # x_vals = np.linspace(0, x + 40, 80)
+    # tangent = (90 + slope) * x_vals
+    # plt.plot(x_vals + 69.8, tangent, alpha=0.4, color='yellow', linewidth=2.0)
+
+    plt.plot(a_points[:, 0], a_points[:, 1], lw=2, color='w')
+
+    # plt.ylim(-15, 25)
+    plt.ylim(0, diameter)
+    plt.xlim(0, diameter)
+    # plt.xlim(45, 75)
+
     plt.savefig(
         './drop_profile/Density-only-' +
         str(first_timestep + iframe * dt).zfill(7) +
         'fs.png'
     )
 
-    spread_radius_side = plt.Circle(
-        (xx_3, yx_3), Rx_def,
-        alpha=0.4,
-        facecolor='none',
-        edgecolor='black',
-        linewidth=2.0
-    )
+    ax.add_artist(spreading_radius)
+    # plt.show()
 
-    ax.add_artist(
-        spread_radius_side
-    )
+    # Formula for the ellipse
+    # https://math.stackexchange.com/questions/426150/what-is-the-general-equation-of-the-ellipse-that-is-not-in-the-origin-and-rotate#434482
 
-    if yx_3 == 0.0:
-        spread_rad_surf = Rx_def
-        deriv = 0.0
-    elif yx_3 > 0.0:
-        spread_rad_surf = np.sqrt(Rx_def**2 - yx_3**2) + xx_3
-        deriv = (spread_rad_surf - xx_3) / np.sqrt(Rx_def**2 - (spread_rad_surf - xx_3)**2)
-    elif yx_3 < 0.0:
-        spread_rad_surf = np.sqrt(Rx_def**2 - yx_3**2) + xx_3
-        deriv = (-1) * (spread_rad_surf - xx_3) / np.sqrt(Rx_def**2 - (spread_rad_surf - xx_3)**2)
-
-    contact_angle = np.absolute(np.rad2deg(np.arctan(deriv)))
-
-    plt.ylim(0, rho_z.max())
-    plt.xlim(0, rho_rho.max())
-
-    x = np.linspace(Rx_def - 40.0, Rx_def, 25)
-    slope = deriv * x - spread_rad_surf * deriv
-    plt.plot(x, slope, alpha=0.4, color='yellow', linewidth=2.0)
+    # spread_radius_side = plt.Circle(
+    #     (xx_3, yx_3), Rx_def,
+    #     alpha=0.4,
+    #     facecolor='none',
+    #     edgecolor='black',
+    #     linewidth=2.0
+    # )
+    #
+    # ax.add_artist(
+    #     spread_radius_side
+    # )
+    #
+    # if yx_3 == 0.0:
+    #     spread_rad_surf = Rx_def
+    #     deriv = 0.0
+    # elif yx_3 > 0.0:
+    #     spread_rad_surf = np.sqrt(Rx_def**2 - yx_3**2) + xx_3
+    #     deriv = (spread_rad_surf - xx_3) / np.sqrt(Rx_def**2 - (spread_rad_surf - xx_3)**2)
+    # elif yx_3 < 0.0:
+    #     spread_rad_surf = np.sqrt(Rx_def**2 - yx_3**2) + xx_3
+    #     deriv = (-1) * (spread_rad_surf - xx_3) / np.sqrt(Rx_def**2 - (spread_rad_surf - xx_3)**2)
+    #
+    # contact_angle = np.absolute(np.rad2deg(np.arctan(deriv)))
+    #
+    # x = np.linspace(Rx_def - 40.0, Rx_def, 25)
+    # slope = deriv * x - spread_rad_surf * deriv
+    # plt.plot(x, slope, alpha=0.4, color='yellow', linewidth=2.0)
 
     plt.savefig(
         './drop_profile/Density-with-CircleSlope' +
@@ -204,8 +322,8 @@ def spread_radius(rho_z_distribution,
     # plt.close(profile_fig)
 
     # print(spread_rad_surf, deriv, contact_angle, np.absolute(contact_angle))
-    all_data.append(spread_rad_surf)
-    all_data.append(contact_angle)
+    # all_data.append(spread_rad_surf)
+    # all_data.append(contact_angle)
 
     # And the same for the disks using get_spread_radius_map
 
@@ -288,7 +406,7 @@ def spread_radius(rho_z_distribution,
         lsc_out_spreading = lsc_odr_spreading.run()
 
         x_spread, y_spread, R_spread = lsc_out_spreading.beta
-        Ri = calc_R(x_spread_radius_fit, y_spread_radius_fit, x_spread, y_spread)
+        Ri = calc_radius(x_spread_radius_fit, y_spread_radius_fit, x_spread, y_spread)
         r_spread_def = np.mean(Ri)
         # r_h_per_frame.append([R_def, iz * dz + dz * z_height / 2.0])
         # residue = sum((Ri_3 - R_3)**2)
@@ -309,7 +427,8 @@ def spread_radius(rho_z_distribution,
             xi,
             yi,
             zi,
-            levels,
+            levels[0:-1],
+            vmin=levels[0], vmax=levels[-1],
             extent=[
                 spread_radius_x.min(), spread_radius_x.max(),
                 spread_radius_y.min(), spread_radius_y.max()]
@@ -328,20 +447,21 @@ def spread_radius(rho_z_distribution,
         ax.set_ylabel(
             r"z, \AA"
         )
-        ax.set_xticklabels(
-            ax.get_xticks(),
-            fontproperties='Open Sans'
-        )
 
-        ax.set_yticklabels(
-            ax.get_yticks(),
-            fontproperties='Open Sans'
-        )
+        # ax.set_xticklabels(
+        #     ax.get_xticks(),
+        #     fontproperties='Open Sans'
+        # )
+        #
+        # ax.set_yticklabels(
+        #     ax.get_yticks(),
+        #     fontproperties='Open Sans'
+        # )
 
-        spread_radius_cbar.ax.set_yticklabels(
-            levels,
-            fontproperties='Open Sans'
-        )
+        # spread_radius_cbar.ax.set_yticklabels(
+        #     levels,
+        #     fontproperties='Open Sans'
+        # )
 
         plt.text(
             50, 50,
@@ -350,8 +470,8 @@ def spread_radius(rho_z_distribution,
             fontproperties='Open Sans'
         )
 
-        plt.ylim(-(r_spread_def + 20.0), r_spread_def + 20.0)
-        plt.xlim(-(r_spread_def + 20.0), r_spread_def + 20.0)
+        plt.ylim(-diameter, diameter)
+        plt.xlim(-diameter, diameter)
 
         plt.savefig(
             './drop_from_top/SpreadingDensityOnly_Layer' +
@@ -389,6 +509,7 @@ def vel_dens_distribution(xyz_mol_distrib,
                           z_vel_distrib,
                           vel_abs_rhoz,
                           vel_abs_xyz,
+                          levels,
                           iframe, first_timestep, dt,
                           dx, dy, dz, drho):
 
@@ -453,8 +574,8 @@ def vel_dens_distribution(xyz_mol_distrib,
                 zi[j, k] = 0.0
 
     # profile_fig = plt.figure(1)
-    dtick = int(np.ceil(np.floor(zi.max()/10) / 10) * 10)
-    maxtick = int(np.ceil(zi.max() / dtick) * dtick + 2 * dtick)
+    # dtick = int(np.ceil(np.floor(zi.max()/10) / 10) * 10)
+    # maxtick = int(np.ceil(zi.max() / dtick) * dtick + 2 * dtick)
 
     plt.figure()
     # print(rho_z_mol_distrib[0])
@@ -466,9 +587,9 @@ def vel_dens_distribution(xyz_mol_distrib,
     # http://stackoverflow.com/questions/25342072/computing-and-drawing-vector-fields#25343170
     # https://stackoverflow.com/questions/35047106/how-do-i-set-limits-on-ticks-colors-and-labels-for-colorbar-contourf-matplotli
 
-    levels = ()
-    for lvl in range(0, maxtick, dtick):
-        levels += (lvl,)
+    # levels = ()
+    # for lvl in range(0, maxtick, dtick):
+    #     levels += (lvl,)
 
     cntrf = plt.contour(
         xi, yi, zi,
@@ -487,7 +608,7 @@ def vel_dens_distribution(xyz_mol_distrib,
     cntr = plt.contourf(
         xi, yi, zi,
         levels[0:-1],
-        vmin=vel_abs.min(), vmax=vel_abs.max(),
+        vmin=levels[0], vmax=levels[-1]+100,
         origin='lower',
         extent=[
             vel_rho.min(), vel_rho.max(),
