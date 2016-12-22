@@ -186,24 +186,34 @@ def get_rhoz_xyz_vel_distribution(cofm_per_molecule,
         get_vel_abs_xyz = np.full((nx + 50, ny + 50, nz), 0.0)
 
         for mol in range(len(cofm_per_molecule)):
-            rho, theta = cart2pol(cofm_per_molecule[mol][0], cofm_per_molecule[mol][1])
+
+            rho, theta = cart2pol(
+                cofm_per_molecule[mol][0],
+                cofm_per_molecule[mol][1]
+            )
+
             irho = int(np.floor(rho / drho))
             ix = int(np.floor(cofm_per_molecule[mol][0] / dx))
             iy = int(np.floor(cofm_per_molecule[mol][1] / dy))
             iz = int(np.floor(cofm_per_molecule[mol][2] / dz))
 
-            # Calculate the absolute value of the velocity at rho, z and x, y, z.
-            # Used for contour plots.
-            velocity_abs_value = np.sqrt(vel_per_molecule[mol][0]**2 +
-                                         vel_per_molecule[mol][1]**2 +
-                                         vel_per_molecule[mol][2]**2)
+            # Calculate the absolute value of the velocity of each
+            # molecule. Used for contour plots.
+            velocity_abs_value = np.sqrt(
+                vel_per_molecule[mol][0]**2 +
+                vel_per_molecule[mol][1]**2 +
+                vel_per_molecule[mol][2]**2
+            )
 
             # Get the polar coordinates of the velocity vector
-            velocity_in_plane, phi = cart2pol(vel_per_molecule[mol][0] / velocity_abs_value,
-                                              vel_per_molecule[mol][1] / velocity_abs_value)
+            velocity_in_plane, phi = cart2pol(
+                vel_per_molecule[mol][0] / velocity_abs_value,
+                vel_per_molecule[mol][1] / velocity_abs_value
+            )
 
             # Calculate the part of the velocity in rho only.
-            velocity_in_rho = velocity_in_plane * np.cos(abs(theta - phi))
+            velocity_in_rho = velocity_in_plane * \
+                              np.cos(np.deg2rad(abs(theta - phi)))
 
             if ix < xmin:
                 xmin = ix

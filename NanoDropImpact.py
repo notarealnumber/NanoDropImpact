@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
 import scipy.constants as constants
-
+import matplotlib
+matplotlib.use('Agg')
 
 from get_initial_data import *
 from get_basic_data import *
@@ -9,8 +10,8 @@ from analysis import *
 from pylab import *
 from matplotlib import rc
 
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Open Sans']})
-rc('text', usetex=True)
+# rc('font', **{'family': 'sans-serif', 'sans-serif': ['Open Sans']})
+# rc('text', usetex=True)
 mpl.rcParams['font.sans-serif'] = 'Open Sans'
 mpl.rcParams['font.serif'] = 'Palatino'
 mpl.rcParams['font.size'] = '14'
@@ -19,7 +20,7 @@ mpl.rcParams['xtick.major.size'] = '14'
 mpl.rcParams['xtick.major.pad'] = '8'
 mpl.rcParams['ytick.major.size'] = '14'
 mpl.rcParams['ytick.major.pad'] = '8'
-# mpl.rcParams['mathtext.default'] = 'sf'
+mpl.rcParams['mathtext.default'] = 'sf'
 
 
 def main():
@@ -41,9 +42,9 @@ def main():
 
     generate_folder_structure()
 
-    dx = 12.5
-    dy = 12.5
-    dz = 8.0
+    dx = 12.0
+    dy = 12.0
+    dz = 12.0
     drho = 8.0
 
     # Initiate a few variables
@@ -51,7 +52,8 @@ def main():
     molar_mass = 0.0
     molecule_weight = 0.0
 
-    datafile, nframes, natoms, dt, calc_vel = get_user_input()
+    datafile, nframes, natoms, dt, \
+        calc_vel, max_vel, drop_diameter = get_user_input()
 
     nmol, tot_nr_of_atoms, \
         first_timestep, \
@@ -72,9 +74,13 @@ def main():
 
     all_data = []
 
-    levels = ()
+    density_levels = ()
     for lvl in range(0, 1200, 100):
-        levels += (lvl,)
+        density_levels += (lvl,)
+
+    velocity_levels = ()
+    for lvl in range(0, max_vel, 100):
+        velocity_levels += (lvl,)
 
     velocity_coord_file = open(datafile, "r")
 
@@ -126,11 +132,12 @@ def main():
         all_data.append(
             spread_radius(rho_z_molecules_distribution,
                           xyz_molecules_distribution,
-                          levels,
+                          density_levels,
                           molecule_weight,
                           timestep, first_timestep, dt,
                           xmin, xmax,
                           ymin, ymax,
+                          drop_diameter,
                           dx, dy, dz, drho
                           )
         )
@@ -142,7 +149,9 @@ def main():
                                   z_velocity_distribution,
                                   velocity_abs_value_rhoz,
                                   velocity_abs_value_xyz,
+                                  velocity_levels,
                                   timestep, first_timestep, dt,
+                                  drop_diameter,
                                   dx, dy, dz, drho
                                   )
 
@@ -151,22 +160,20 @@ def main():
                          str((first_timestep + nframes * dt) / 1e03) + "ps.data",
                          "w"
                          )
-    print("# Time      xc  yc  Rc from circle    "
-          "r_spread and       "
-          "#Layer  xc yc Rc from circle        "
-          "#Layer  xc yc Rc from circle        "
-          "#Layer  xc yc Rc from circle", file=all_data_file)
-    print("# in [ps]   fit of rho/z data         "
-          "contact angle              "
-          "fit of x/y data                     "
-          "fit of x/y data                     "
-          "fit of x/y data", file=all_data_file)
-    print("#  t(1)    "
-          "xc(2)    yc(3)    Rc(4)    "
-          "Rs(5) theta(6)     "
-          "#(7)    xc(8)    yc(9)    Rc(10)    "
-          "#(11)   xc(12)   yc(13)   Rc(14)    "
-          "#(15)   xc(16)   yc(17)   Rc(18)", file=all_data_file)
+    print("# Time given in [ps]. R(2) and theta(3) represent the ",
+          file=all_data_file)
+    print("# the spreading radius and the contact angle obtained from ",
+          file=all_data_file)
+    print("# fitting a circle to the density profile of the drop.",
+          file=all_data_file)
+    print("# xc(5), yc(6), and R(7) represent the circle's center",
+          file=all_data_file)
+    print("# coordinates and the spreading radius as obtained from a",
+          file=all_data_file)
+    print("# fit to the extension of the drop in x and y.",
+          file=all_data_file)
+    print("#   t(1)     R(2) theta(3)    "
+          "xc(5)    yc(6)     R(7)    ", file=all_data_file)
 
     for data in all_data:
         for i in range(len(data)):

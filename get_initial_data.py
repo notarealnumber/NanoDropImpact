@@ -22,10 +22,15 @@ def get_dummy_lines(inputfile):
 
 
 def cart2pol(x, y):
-
     rho = np.sqrt(x ** 2 + y ** 2)
     phi = np.arctan2(y, x)
     return rho, phi
+
+
+def pol2cart(rho, phi):
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return x, y
 
 
 def get_user_input():
@@ -46,7 +51,7 @@ def get_user_input():
     # print("####################################")
     # nsteps = input("Number of frames: ")
     # nsteps = int(nsteps)
-    nsteps = 25
+    nsteps = 5
     #
     # print("####################################")
     # at_per_molec = input("Number of atoms per molecule: ")
@@ -62,7 +67,10 @@ def get_user_input():
     # print(" ")
     calc_vel = True
 
-    return filename, nsteps, at_per_molec, dt, calc_vel
+    max_vel = 1600
+    drop_diameter = 100.0
+
+    return filename, nsteps, at_per_molec, dt, calc_vel, max_vel, drop_diameter
 
 
 def get_info(inputfile,
