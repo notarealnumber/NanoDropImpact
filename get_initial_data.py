@@ -43,45 +43,50 @@ def get_user_input():
     at_per_molec
     """
 
+    cluster_files = []
+
     inputfile = "input.txt"
     inputs = open(inputfile, "r")
+
+    # filename, nsteps, dt, drop_diameter are always needed.
     filename = inputs.readline().strip("\n")
     nsteps = int(inputs.readline().strip("\n"))
-    at_per_molec = int(inputs.readline().strip("\n"))
     dt = float(inputs.readline().strip("\n"))
-    calc_vel = bool(inputs.readline().strip("\n"))
-    max_vel = int(inputs.readline().strip("\n"))
     drop_diameter = float(inputs.readline().strip("\n"))
 
+    calc_radius_angle = inputs.readline().strip("\n")
+    if calc_radius_angle == "True":
+        calc_radius_angle = True
+        at_per_molec = int(inputs.readline().strip("\n"))
+    else:
+        calc_radius_angle = False
+        at_per_molec = int(inputs.readline().strip("\n"))
 
-    # print(" ")
-    # print("####################################")
-    # filename = input("Enter file name: ")
-    # filename = "drop10nm.vel"
-    #
-    # print("####################################")
-    # nsteps = input("Number of frames: ")
-    # nsteps = int(nsteps)
-    # nsteps = 5
-    #
-    # print("####################################")
-    # at_per_molec = input("Number of atoms per molecule: ")
-    # at_per_molec = int(at_per_molec)
-    # at_per_molec = 44
-    #
-    # print("####################################")
-    # print("Time between 2 consecutive")
-    # dt = input("time steps (in [fs]): ")
-    # dt = float(dt)
-    # dt = 50
-    # print("####################################")
-    # print(" ")
-    # calc_vel = True
+    calc_vel = inputs.readline().strip("\n")
+    if calc_vel == "True":
+        calc_vel = True
+        max_vel = int(inputs.readline().strip("\n"))
+    else:
+        calc_vel = False
+        max_vel = int(inputs.readline().strip("\n"))
 
-    # max_vel = 1600
-    # drop_diameter = 100.0
+    clusters = inputs.readline().strip("\n")
+    if clusters == "True":
+        clusters = True
+        nclusters = int(inputs.readline().strip("\n"))
+        for i in range(nclusters):
+            cluster_files.append(inputs.readline().strip("\n"))
+    else:
+        clusters = False
+        nclusters = int(inputs.readline().strip("\n"))
 
-    return filename, nsteps, at_per_molec, dt, calc_vel, max_vel, drop_diameter
+    return calc_radius_angle, filename, \
+        nsteps, \
+        at_per_molec, \
+        dt, \
+        calc_vel, max_vel, \
+        drop_diameter, \
+        clusters, nclusters, cluster_files
 
 
 def get_info(inputfile,
@@ -102,22 +107,22 @@ def get_info(inputfile,
     fileread.close()
 
     return int(nat / at_per_mol), nat, init_timestep, float(xlo), float(xhi), \
-           float(ylo), float(yhi), float(zlo), float(zhi)
+        float(ylo), float(yhi), float(zlo), float(zhi)
 
 
-def get_data(vel_coord_file, nmol, nat):
+def get_raw_data(datafile, nmol, nat):
 
     velocities = np.full((nmol * nat, 3), 0.0)
     coordinates = np.full((nmol * nat, 3), 0.0)
     masses = np.full((nmol * nat), 0.0)
     nat_tot = int(nmol * nat)
 
-    get_dummy_lines(vel_coord_file)
+    get_dummy_lines(datafile)
 
     for i in range(0, nat_tot):
         velocities[i, 0], velocities[i, 1], velocities[i, 2], \
             coordinates[i, 0], coordinates[i, 1], coordinates[i, 2], \
-            masses[i] = vel_coord_file.readline().strip(" ").split()
+            masses[i] = datafile.readline().strip(" ").split()
 
     return velocities, coordinates, masses
 

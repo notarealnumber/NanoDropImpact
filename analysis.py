@@ -1,7 +1,25 @@
 import scipy.interpolate
-from least_square_circle import *
 import numpy as np
+import matplotlib as mpl
+mpl.use('Agg')
+import pylab as plt
+from least_square_circle import *
 from scipy import odr
+
+from matplotlib import rc
+from mpl_toolkits.mplot3d import Axes3D
+
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Open Sans']})
+# rc('text', usetex=True)
+mpl.rcParams['font.sans-serif'] = 'Open Sans'
+mpl.rcParams['font.serif'] = 'Palatino'
+mpl.rcParams['font.size'] = '14'
+mpl.rcParams['axes.labelsize'] = '18'
+mpl.rcParams['xtick.major.size'] = '14'
+mpl.rcParams['xtick.major.pad'] = '8'
+mpl.rcParams['ytick.major.size'] = '14'
+mpl.rcParams['ytick.major.pad'] = '8'
+mpl.rcParams['mathtext.default'] = 'sf'
 
 
 def spread_radius(rho_z_distribution,
@@ -406,11 +424,6 @@ def vel_dens_distribution(rho_z_mol_distrib,
                           diameter,
                           dz, drho):
 
-    from get_initial_data import cart2pol
-
-    # avg_frames = np.floor(nFrames/navg)
-    # Take average over navg frames. Discard any remaining frames.
-
     size_rho = int(np.ceil(diameter / drho)) + 2
     size_z = size_rho
     vel_rho = []
@@ -466,7 +479,12 @@ def vel_dens_distribution(rho_z_mol_distrib,
                  np.linspace(vel_z.min(), vel_z.max(), 1000)
         xi, yi = np.meshgrid(xi, yi)
 
-        zi = scipy.interpolate.griddata((vel_rho, vel_z), vel_abs, (xi, yi), method='cubic')
+        zi = scipy.interpolate.griddata(
+                (vel_rho, vel_z),
+                vel_abs,
+                (xi, yi),
+                method='cubic'
+        )
 
         for k in range(len(zi[1])):
             for j in range(len(zi[0])):
@@ -516,7 +534,7 @@ def vel_dens_distribution(rho_z_mol_distrib,
         ax.set_ylabel(angstrom_label)
 
         plt.text(
-            50, 50,
+            np.ceil(diameter * 0.75), np.ceil(diameter * 0.75),
             str((first_timestep + iframe * dt) / 1000) + " ps",
             fontsize=20,
             fontproperties='Open Sans'
@@ -542,3 +560,51 @@ def vel_dens_distribution(rho_z_mol_distrib,
 
     except:
         pass
+
+
+def write_path(nclusters, clusters_path, first_timestep, dt):
+    for clu in range(nclusters):
+        outfile = open("Cluster" + str(clu).zfill(2) + "_Path.data", "w")
+        print(
+            "# XYZ coordinates of the cluster center of mass.",
+            file=outfile
+        )
+        print(
+            "# Time [fs], x [Ang], y [Ang], z [Ang]"
+        )
+        for step in range(clusters_path.shape[0]):
+            print(
+                "{:8.3f}".format((first_timestep + step * dt) / 1000.0),
+                "{:8.3f}".format(clusters_path[step, clu, 0]),
+                "{:8.3f}".format(clusters_path[step, clu, 1]),
+                "{:8.3f}".format(clusters_path[step, clu, 2]),
+                end="\n",
+                file=outfile
+            )
+        outfile.close()
+
+
+def create_velocities(nclusters, clusters_vel, first_timestep, dt):
+    outfile = open("AllClusters_Velocities.data", "w")
+    vel = np.full((clusters_vel.shape[0], nclusters), 0.0)
+
+    for step in range(clusters_vel.shape[0]):
+        print(
+            "{:8.3f}".format((first_timestep + step * dt) / 1000.0),
+            end=" ",
+            file=outfile
+        )
+        for clu in range(nclusters):
+            vel[step, clu] = np.sqrt(
+                np.dot(
+                    clusters_vel[step, clu, :],
+                    clusters_vel[step, clu, :]
+                )
+            )
+
+            print(
+                "{:8.3f}".format(vel[step, clu]),
+                end=" ",
+                file=outfile
+            )
+        print(end="\n", file=outfile)

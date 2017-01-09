@@ -1,9 +1,9 @@
 import numpy as np
 
 
-def get_drop_cofm(coordinates,
-                  masses, nat_tot,
-                  drop_mass):
+def get_cofm(coordinates,
+             masses, nat_tot,
+             drop_mass):
 
     min_z_coord = 1000.0
 
@@ -21,6 +21,26 @@ def get_drop_cofm(coordinates,
     coordinates[:, 2] -= min_z_coord
 
     return cofm_drop
+
+
+def get_per_cluster_vel(velocities, natoms):
+    """
+
+    :param velocities:
+    :param natoms:
+    :return:
+    """
+
+    velocities = np.array(velocities)
+    cluster_velocities = np.full(3, 0.0)
+    for i in range(natoms):
+        cluster_velocities[0] = sum(velocities[:, 0])
+        cluster_velocities[1] = sum(velocities[:, 1])
+        cluster_velocities[2] = sum(velocities[:, 2])
+
+    cluster_velocities /= (float(natoms) * 1e-05)
+
+    return cluster_velocities
 
 
 def get_molecules_cofm(

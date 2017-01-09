@@ -1,0 +1,14 @@
+drop10nm.vel
+3
+50.0
+150.0
+False
+44
+False
+1200
+True
+4
+impact02-15nm4Au-750ms-cluster01.vel
+impact02-15nm4Au-750ms-cluster02.vel
+impact02-15nm4Au-750ms-cluster03.vel
+impact02-15nm4Au-750ms-cluster04.vel
