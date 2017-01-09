@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
 import scipy.constants as constants
-
+import matplotlib
+matplotlib.use('Agg')
 
 from get_initial_data import *
 from get_basic_data import *
@@ -10,7 +11,7 @@ from pylab import *
 from matplotlib import rc
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Open Sans']})
-rc('text', usetex=True)
+# rc('text', usetex=True)
 mpl.rcParams['font.sans-serif'] = 'Open Sans'
 mpl.rcParams['font.serif'] = 'Palatino'
 mpl.rcParams['font.size'] = '14'
@@ -19,7 +20,7 @@ mpl.rcParams['xtick.major.size'] = '14'
 mpl.rcParams['xtick.major.pad'] = '8'
 mpl.rcParams['ytick.major.size'] = '14'
 mpl.rcParams['ytick.major.pad'] = '8'
-# mpl.rcParams['mathtext.default'] = 'sf'
+mpl.rcParams['mathtext.default'] = 'sf'
 
 
 def main():
@@ -134,23 +135,20 @@ def main():
                           density_levels,
                           molecule_weight,
                           timestep, first_timestep, dt,
-                          xmin, xmax,
-                          ymin, ymax,
                           drop_diameter,
                           dx, dy, dz, drho
                           )
         )
 
         if calc_vel:
-            vel_dens_distribution(xyz_molecules_distribution,
-                                  rho_z_molecules_distribution,
+            vel_dens_distribution(rho_z_molecules_distribution,
                                   rho_velocity_distribution,
                                   z_velocity_distribution,
                                   velocity_abs_value_rhoz,
-                                  velocity_abs_value_xyz,
                                   velocity_levels,
                                   timestep, first_timestep, dt,
-                                  dx, dy, dz, drho
+                                  drop_diameter,
+                                  dz, drho
                                   )
 
     all_data_file = open("./AllData_" +
@@ -158,26 +156,28 @@ def main():
                          str((first_timestep + nframes * dt) / 1e03) + "ps.data",
                          "w"
                          )
-    print("# Time      xc  yc  Rc from circle    "
-          "r_spread and       "
-          "#Layer  xc yc Rc from circle        "
-          "#Layer  xc yc Rc from circle        "
-          "#Layer  xc yc Rc from circle", file=all_data_file)
-    print("# in [ps]   fit of rho/z data         "
-          "contact angle              "
-          "fit of x/y data                     "
-          "fit of x/y data                     "
-          "fit of x/y data", file=all_data_file)
-    print("#  t(1)    "
-          "xc(2)    yc(3)    Rc(4)    "
-          "Rs(5) theta(6)     "
-          "#(7)    xc(8)    yc(9)    Rc(10)    "
-          "#(11)   xc(12)   yc(13)   Rc(14)    "
-          "#(15)   xc(16)   yc(17)   Rc(18)", file=all_data_file)
+    print("# Time given in [ps]. R(2) and theta(3) represent the ",
+          file=all_data_file)
+    print("# the spreading radius and the contact angle obtained from ",
+          file=all_data_file)
+    print("# fitting a circle to the density profile of the drop.",
+          file=all_data_file)
+    print("# xc(5), yc(6), and R(7) represent the circle's center",
+          file=all_data_file)
+    print("# coordinates and the spreading radius as obtained from a",
+          file=all_data_file)
+    print("# fit to the extension of the drop in x and y.",
+          file=all_data_file)
+    print("#   t(1)     R(2) theta(3)    "
+          "xc(5)    yc(6)     R(7)    ", file=all_data_file)
 
     for data in all_data:
         for i in range(len(data)):
-            print("{:8.3f}".format(data[i]), end=" ", file=all_data_file)
+            if data[1] == -99999.0:
+                # Error rose earlier, skip writing data
+                continue
+            else:
+                print("{:8.3f}".format(data[i]), end=" ", file=all_data_file)
         print(end="\n", file=all_data_file)
 
     all_data_file.close()
