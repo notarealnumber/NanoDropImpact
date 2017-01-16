@@ -2,10 +2,11 @@ import numpy as np
 
 
 def get_cofm(coordinates,
-             masses, nat_tot,
-             drop_mass):
+             masses, drop_mass):
 
     min_z_coord = 1000.0
+    nat_tot = len(coordinates)
+    print(nat_tot)
 
     """
     Get the drop's center of mass.
@@ -82,7 +83,7 @@ def get_molecules_cofm(
     velocity_per_molecule = []
 
     if get_vel_per_molecule:
-        for imol in range(0, nmol):
+        for imol in range(nmol):
 
             x_cofm = 0.0
             y_cofm = 0.0
@@ -126,7 +127,7 @@ def get_molecules_cofm(
             velocity_per_molecule.append([vx_cofm, vy_cofm, vz_cofm])
 
     else:
-        for imol in range( nmol):
+        for imol in range(nmol):
 
             """
             Calculates the center of mass per molecule. Periodic boundary conditions

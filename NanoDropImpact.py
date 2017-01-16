@@ -90,7 +90,7 @@ def main():
         if calc_radius_angle or calc_vel:
 
             velocities, coordinates, masses = \
-                get_raw_data(velocity_coord_file, nmol, natoms)
+                get_raw_data(velocity_coord_file, natoms)
 
             # Calculate a few constants, just once at the first timestep
             if timestep == 0:
@@ -101,7 +101,6 @@ def main():
             # Center of mass of the drop and each molecule, which changes with every timestep
             drop_cofm = get_cofm(
                 coordinates, masses,
-                tot_nr_of_atoms,
                 drop_mass
             )
 
@@ -110,7 +109,7 @@ def main():
                 velocities,
                 masses, molar_mass,
                 drop_cofm,
-                natoms, nmol,
+                natoms, int(len(coordinates) / natoms),
                 xlo, xhi, delta_x,
                 ylo, yhi, delta_y,
                 calc_vel

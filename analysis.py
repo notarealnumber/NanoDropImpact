@@ -564,7 +564,7 @@ def vel_dens_distribution(rho_z_mol_distrib,
 
 def write_path(nclusters, clusters_path, first_timestep, dt):
     for clu in range(nclusters):
-        outfile = open("Cluster" + str(clu).zfill(2) + "_Path.data", "w")
+        outfile = open("Cluster" + str(clu + 1).zfill(2) + "_Path.data", "w")
         print(
             "# XYZ coordinates of the cluster center of mass.",
             file=outfile

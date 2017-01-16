@@ -110,19 +110,44 @@ def get_info(inputfile,
         float(ylo), float(yhi), float(zlo), float(zhi)
 
 
-def get_raw_data(datafile, nmol, nat):
+def get_current_info(inputfile,
+             at_per_mol):
+
+    # inputfile = open(inputfile, "r")
+
+    inputfile.readline()
+    init_timestep = int(inputfile.readline())
+    inputfile.readline()
+    nat = int(inputfile.readline())
+    inputfile.readline()
+    xlo, xhi = inputfile.readline().strip(" ").split()
+    ylo, yhi = inputfile.readline().strip(" ").split()
+    zlo, zhi = inputfile.readline().strip(" ").split()
+    inputfile.readline()
+
+    # inputfile.close()
+
+    return int(nat / at_per_mol), nat, init_timestep, float(xlo), float(xhi), \
+        float(ylo), float(yhi), float(zlo), float(zhi)
+
+
+def get_raw_data(datafile, nat):
+
+    nmol, tot_nr_of_atoms, \
+            current_timestep, \
+            xlo, xhi, \
+            ylo, yhi, \
+            zlo, zhi = get_current_info(datafile, nat)
 
     velocities = np.full((nmol * nat, 3), 0.0)
     coordinates = np.full((nmol * nat, 3), 0.0)
     masses = np.full((nmol * nat), 0.0)
-    nat_tot = int(nmol * nat)
 
-    get_dummy_lines(datafile)
-
-    for i in range(0, nat_tot):
+    for i in range(tot_nr_of_atoms):
         velocities[i, 0], velocities[i, 1], velocities[i, 2], \
             coordinates[i, 0], coordinates[i, 1], coordinates[i, 2], \
             masses[i] = datafile.readline().strip(" ").split()
+        # print(i, velocities[i])
 
     return velocities, coordinates, masses
 
